@@ -5,5 +5,11 @@ jobs:
   Testing: 
     runs-on: ubuntu-latest
     steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
       - name: Test
-        run: echo "testing succesfull"
+        uses: mnv test
+        
+      - name: style
+        uses: mvn checkstyle:checkstyle
