@@ -58,9 +58,9 @@ jobs:
 
       - name: update db details
         run: |
-          sed -i 's/^jdbc.username.*$/jdbc.username\={{secrets.RDS_USER}}' src/main/resources/application.properties
-          sed -i 's/^jdbc.password.*$/jdbc.password\={{secrets.RDS_PASSWORD}}' src/main/resources/application.properties
-          sed -i 's/^jdbc.url.*$/jdbc.url\={{secrets.RDS_ENDPOINT}}' src/main/resources/application.properties
+          sed -i "s/^jdbc.username.*$/jdbc.username=${{ secrets.RDS_USER }}/" src/main/resources/application.properties
+          sed -i "s/^jdbc.password.*$/jdbc.password=${{ secrets.RDS_PASSWORD }}/" src/main/resources/application.properties
+          sed -i "s|^jdbc.url.*$|jdbc.url=${{ secrets.RDS_ENDPOINT }}|" src/main/resources/application.properties
 
       - name: Build and Upload to ECR
         uses: appleboy/docker-ecr-action@master
