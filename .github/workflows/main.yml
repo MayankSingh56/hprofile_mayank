@@ -3,6 +3,7 @@ on: workflow_dispatch
 
 env:
   AWS_REGION: ap-south-1
+  PUBLIC_ECR_REPO: public.ecr.aws/v5p7g7h5/pocapp
 
 jobs:
   Testing: 
@@ -62,17 +63,25 @@ jobs:
           sed -i "s/^jdbc.password.*$/jdbc.password=${{ secrets.RDS_PASSWORD }}/" src/main/resources/application.properties
           sed -i "s|^jdbc.url.*$|jdbc.url=${{ secrets.RDS_ENDPOINT }}|" src/main/resources/application.properties
 
-      - name: Build and Upload to ECR
-        uses: appleboy/docker-ecr-action@master
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
-          registry: ${{ secrets.AWS_ECR_ENDPOINT }}
-          repo: pocapp
-          region: ${{env.AWS_REGION}}
-          tags: latest, ${{github.run_id}}
-          daemon_off: false
-          dockerfile: ./Dockerfile
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Public ECR
+        run: |
+          aws ecr-public get-login-password --region ${{ env.AWS_REGION }} | \
+            docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
           context: ./
+          push: true
+          tags: |
+            ${{ env.PUBLIC_ECR_REPO }}:latest
+            ${{ env.PUBLIC_ECR_REPO }}:${{ github.run_id }}
 
       
