@@ -1,6 +1,9 @@
 name: Testing the workflow
 on: workflow_dispatch
 
+env:
+  AWS_REGION: ap-south-1
+
 jobs:
   Testing: 
     runs-on: ubuntu-latest
@@ -44,4 +47,31 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
+
+  Build:
+    runs-on: ubuntu-latest
+      
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: update db details
+        run: |
+          sed -i 's/^jdbc.username.*$/jdbc.username\={{secrets.RDS_USER}}' src/main/resources/application.properties
+          sed -i 's/^jdbc.password.*$/jdbc.password\={{secrets.RDS_PASSWORD}}' src/main/resources/application.properties
+          sed -i 's/^jdbc.url.*$/jdbc.url\={{secrets.RDS_ENDPOINT}}' src/main/resources/application.properties
+
+      - name: Build and Upload to ECR
+        uses: appleboy/docker-ecr-action@master
+        with:
+          access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
+          registry: ${{ secrets.AWS_ECR_ENDPOINT }}
+          repo: pocapp
+          region: ${{env.AWS_REGION}}
+          tags: latest, ${{github.run_id}}
+          daemon_off: false
+          dockerfile: ./Dockerfile
+          context: ./
+
       
